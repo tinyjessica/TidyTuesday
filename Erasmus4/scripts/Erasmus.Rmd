@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, error = FALSE)
 ```
 ## Intro
+This script takes the data for the foreign exhange programs and plots the number of students received and sent to the countries in a bi-directional bar plot.
 
 ## Libraries
 
@@ -74,8 +75,9 @@ ggplot(exchange, aes(x=fct_reorder(country,  value),
             fill = direction))+
    geom_col() +
   coord_flip()+
-  labs(y = "Number of foreign exhange students leaving and entring the countries between school years 2014-2020",
-       x = "Countries")
+  labs(y = "Number of foreign exhange students",
+       x = "Countries",
+       title = "Foreign Exchange Students leaving/entering countries 2014-2020Academic years")
 ```
 
 
