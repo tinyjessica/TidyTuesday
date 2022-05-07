@@ -6,47 +6,77 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, error = FALSE)
 ```
+## Intro
 
-```{r}
+## Libraries
+
+```{r, results='hide'}
 library(tidyverse)
+library(countrycode)
 ```
 
-
-```{r}
+## Read in Data
+```{r, results='hide'}
 erasmus <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-08/erasmus.csv')
 ```
 
-```{r}
+## Viewing the data
+```{r eval=FALSE}
 head(erasmus)
 slice_sample(erasmus)
-unique(erasmus$receiving_country_code)
+unique(erasmus$academic_year)
+
+guess_field(erasmus$sending_country_code)
+```
+
+## Cleaning the data
+
+```{r}
 
 
 erasmusclean <- erasmus %>% 
-  mutate(Country = countrycode(receiving_country_code, origin = "eurostat", destination = "country.name"))
-  
+  mutate_at(c("sending_country_code", "receiving_country_code"), ~countrycode(., origin = "eurostat", destination = "country.name")) %>% 
+  select(sendingcountry = sending_country_code,
+         receivingcountry = receiving_country_code,
+         academic_year,
+         participants) %>% 
+  filter(sendingcountry!=receivingcountry) 
 
-filter(project_reference=="2017-2-TR01-KA347-046983") %>% 
-  #filter(mobility_duration>30) %>% 
-  group_by(project_reference,mobility_duration) %>% 
-  count(participants, sort=TRUE)
+receiving <- erasmusclean %>% 
+  group_by(receivingcountry, academic_year, .add = TRUE) %>% 
+  summarise(received = sum(participants)) %>% 
+  select(country = receivingcountry, 
+         academic_year, received)
 
-erasmusclean2 <- erasmus %>% 
-  #filter(project_reference=="2017-2-TR01-KA347-046983") %>% 
-  #filter(mobility_duration>30) %>% 
-  group_by(project_reference) %>% 
-  count(mobility_duration, sort=TRUE)
+sending<- erasmusclean %>% 
+  group_by(sendingcountry, academic_year, .add = TRUE) %>% 
+  summarise(sent = sum(participants)) %>% 
+  select(country = sendingcountry, 
+         academic_year, sent) 
 
-erasmusclean3 <- erasmus %>% 
-  #filter(project_reference=="2017-2-TR01-KA347-046983") %>% 
-  filter(mobility_duration>7) %>% 
-  group_by(sending_country_code) %>% 
-  count(mobility_duration, sort=TRUE)
+exchange <- receiving %>% 
+  full_join(sending) %>% 
+  pivot_longer(cols = 3:4,names_to = "direction",
+               values_to = "value") %>% 
+  mutate(value = replace_na(value, 0)) 
 
-library(countrycode)
-guess_field(erasmus$sending_country_code)
 
 ```
+
+## Analyze the Data
+
+```{r}
+
+ggplot(exchange, aes(x=fct_reorder(country,  value), 
+            y = ifelse(direction == "sent", -value, value), 
+            fill = direction))+
+   geom_col() +
+  coord_flip()+
+  labs(y = "Number of foreign exhange students leaving and entring the countries between school years 2014-2020",
+       x = "Countries")
+```
+
+
 
