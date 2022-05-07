@@ -33,26 +33,26 @@ average_cost <- readr::read_csv('https://raw.githubusercontent.com/rfordatascien
 
 ```{r, results='hide', message=FALSE, error=FALSE, warning=FALSE}
 capacityclean <- capacity %>% 
-  filter(type == "Solar" | type=="Gas" | type=="Wind") %>% 
-  select(type, year, total_gw) %>% 
-  pivot_wider(names_from = type,
-              values_from = total_gw,
-              names_glue = "{type}_{.value}")
+  filter(type == "Solar" | type=="Gas" | type=="Wind") %>% # filtered the energy categories I wanted
+  select(type, year, total_gw) %>% # removed the columns not needed
+  pivot_wider(names_from = type, # changing my data from long to wide for easier manipulation
+              values_from = total_gw, # values to pivot
+              names_glue = "{type}_{.value}") # created the name of the column with paste
 
 cost <- average_cost %>% 
-  filter(year != 2021) 
+  filter(year != 2021) # removed this row because it was not complete
 
 totalcost <-capacityclean %>% 
-  left_join(cost) %>% 
-  mutate(solarcosts = Solar_total_gw*1000*solar_mwh,
+  left_join(cost) %>% # joined two data sets
+  mutate(solarcosts = Solar_total_gw*1000*solar_mwh, # converted to mw and multiplied by cost
          windcosts = Wind_total_gw*1000*wind_mwh,
          gascosts = Gas_total_gw*gas_mwh*1000,
-         .keep = "unused") %>%
-  pivot_longer(cols = 2:4,
-               names_to="type",
-               values_to = "dollars") 
+         .keep = "unused") %>% # removed the used columns
+  pivot_longer(cols = 2:4, # changed to long for data frame for plot
+               names_to="type", # new column names
+               values_to = "dollars") # new column names
 
-df<- data_frame(totalcost) 
+df<- data_frame(totalcost) # convert to a dataframe
 ```
 
 ## Analyze Data
@@ -60,7 +60,7 @@ df<- data_frame(totalcost)
 Density Plot of dollars spent between 2014-2020 by type of energy
 
 ```{r}
-ggplot(df, aes(x = dollars, fill = type)) + 
-  geom_density(alpha = 0.5)
+ggplot(df, aes(x = dollars, fill = type)) + # mapped data
+  geom_density(alpha = 0.5) # plot chosen
 ```
 
