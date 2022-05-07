@@ -6,14 +6,17 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, error = FALSE)
 ```
 
 ## Intro
 
-## libraries
+This script will sort the top baby names used for males and females between 1999 and 2018 and plot them in a comparison plot.
 
-```{r}
+## libraries
+Libraries need for the code to run.
+
+```{r, results='hide'}
 library(tidyverse)
 library(wordcloud)
 library(reshape2)
@@ -22,39 +25,38 @@ library(reshape2)
 
 
 ## read in data
-```{r}
+```{r, results='hide'}
 babynames <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-22/babynames.csv')
 
 ```
 
 
-
+## Data cleaning and Analysing
 ```{r, warning=FALSE, error=FALSE}
 twok_names<- babynames %>% 
-  mutate(sex= ifelse(sex=="F", "female","male")) %>% 
-  filter(year>1999, year<2018) %>% 
-  group_by(year) %>% 
-  slice_max(n, n=200) %>% 
-  group_by(name, sex) %>% 
-  slice_max(n, n = 100) %>% 
-  select(!prop)
+  mutate(sex= ifelse(sex=="F", "female","male")) %>% # relabeling the sexes
+  filter(year>1999, year<2018) %>% # filtering dates
+  group_by(year) %>% # grouping by year
+  slice_max(n, n=200) %>% # taking the top 200 names starting from the maximum
+  group_by(name, sex) %>% # grouping by name and sex
+  slice_max(n, n = 100) %>% # selecting the top 100 names
+  select(!prop) # removing this column called prop
   
 
-#str_replace_all(twok_names$sex,c("F"="female", "M"="male"))
-  
-  widenames<- pivot_wider(twok_names, names_from = name, values_from = n) %>% 
-    summarise_if(is.numeric, sum, na.rm = TRUE) %>% 
-    select(!year) %>% 
-    pivot_longer(cols= !sex, names_to = "name") %>% 
-    filter(value!=0) %>% 
-    group_by(sex) %>% 
-    slice_max(value, n=100) 
+
+  widenames<- pivot_wider(twok_names, names_from = name, values_from = n) %>% # changing the data from long to wide to summarize easier 
+    summarise_if(is.numeric, sum, na.rm = TRUE) %>% # summarizing all of the columns
+    select(!year) %>% # removing the year category
+    pivot_longer(cols= !sex, names_to = "name") %>% # making the data back long for my plot
+    filter(value!=0) %>% # removing the empty values
+    group_by(sex) %>% # grouping for next task
+    slice_max(value, n=100) # sorting the values and taking the top 100
     
-  
+  # plot for comparison word cloud 
   widenames %>% 
-    acast(name~sex,value.var = "value", fill = 0) %>% 
-    comparison.cloud(colors = c("purple", "blue"),
-                   max.words = 100, random.order = FALSE)
+    acast(name~sex,value.var = "value", fill = 0) %>% # turning data into a matrix for ploting
+    comparison.cloud(colors = c("purple", "blue"), # colors for my word cloud
+                   max.words = 100, random.order = FALSE) # word limit chosen and order sorted in descending order
     
 ```
 
