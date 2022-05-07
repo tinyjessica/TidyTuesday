@@ -1,0 +1,66 @@
+---
+title: "Solar Wind and Gas Energy"
+author: "Jessica Hunter"
+date: "5/5/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Intro 
+
+This script takes the cost per kilowatthour and multiplies it by the toltal kilowatts to get the total cost for wind, solar, and gas then plots the costs on a density plot.
+
+## Libraries
+```{r, message=FALSE, results='hide'}
+library(tidyverse)
+```
+
+
+
+
+## Read in Data
+
+
+```{r,results='hide', message=FALSE}
+capacity <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-03/capacity.csv')
+
+average_cost <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-03/average_cost.csv')
+```
+## Clean and edit data
+
+```{r, results='hide', message=FALSE, error=FALSE, warning=FALSE}
+capacityclean <- capacity %>% 
+  filter(type == "Solar" | type=="Gas" | type=="Wind") %>% 
+  select(type, year, total_gw) %>% 
+  pivot_wider(names_from = type,
+              values_from = total_gw,
+              names_glue = "{type}_{.value}")
+
+cost <- average_cost %>% 
+  filter(year != 2021) 
+
+totalcost <-capacityclean %>% 
+  left_join(cost) %>% 
+  mutate(solarcosts = Solar_total_gw*1000*solar_mwh,
+         windcosts = Wind_total_gw*1000*wind_mwh,
+         gascosts = Gas_total_gw*gas_mwh*1000,
+         .keep = "unused") %>%
+  pivot_longer(cols = 2:4,
+               names_to="type",
+               values_to = "dollars") 
+
+df<- data_frame(totalcost) 
+```
+
+## Analyze Data
+
+Density Plot of dollars spent between 2014-2020 by type of energy
+
+```{r}
+ggplot(df, aes(x = dollars, fill = type)) + 
+  geom_density(alpha = 0.5)
+```
+

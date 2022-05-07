@@ -1,0 +1,52 @@
+---
+title: "Eramus"
+author: "Jessica Hunter"
+date: "5/5/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+erasmus <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-08/erasmus.csv')
+```
+
+```{r}
+head(erasmus)
+slice_sample(erasmus)
+unique(erasmus$receiving_country_code)
+
+
+erasmusclean <- erasmus %>% 
+  mutate(Country = countrycode(receiving_country_code, origin = "eurostat", destination = "country.name"))
+  
+
+filter(project_reference=="2017-2-TR01-KA347-046983") %>% 
+  #filter(mobility_duration>30) %>% 
+  group_by(project_reference,mobility_duration) %>% 
+  count(participants, sort=TRUE)
+
+erasmusclean2 <- erasmus %>% 
+  #filter(project_reference=="2017-2-TR01-KA347-046983") %>% 
+  #filter(mobility_duration>30) %>% 
+  group_by(project_reference) %>% 
+  count(mobility_duration, sort=TRUE)
+
+erasmusclean3 <- erasmus %>% 
+  #filter(project_reference=="2017-2-TR01-KA347-046983") %>% 
+  filter(mobility_duration>7) %>% 
+  group_by(sending_country_code) %>% 
+  count(mobility_duration, sort=TRUE)
+
+library(countrycode)
+guess_field(erasmus$sending_country_code)
+
+```
+

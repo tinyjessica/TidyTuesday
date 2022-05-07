@@ -1,0 +1,77 @@
+---
+title: "air pollution"
+author: "Jessica Hunter"
+date: "5/5/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FALSE)
+```
+## Intro 
+
+This script will clean and sort the Air pollution data from 2016 and create a dissimilarity plot of factors death and not having access to clean fuels
+
+## Libraries
+
+```{r, results='hide'}
+library(tidyverse)
+library(cluster)
+```
+
+## Read in Data
+
+```{r}
+pollution <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-04-12/indoor_pollution.csv')
+
+access <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-04-12/fuel_access.csv')
+
+```
+
+## Clean and Sort data
+```{r}
+access1 <- access %>% 
+  drop_na() %>% # remove empty rows
+  filter(Year == "2016", # filter year
+         Code != "OWID_WRL") # remove World country code
+  
+pollution1 <- pollution %>% 
+  drop_na() %>% # remove empty rows
+  filter(Year == "2016") # filter year
+
+death <- access1 %>% 
+  left_join(pollution1) %>% # join the two dataframes
+  select(country = Entity, # change column name
+         access = `Access to clean fuels and technologies for cooking  (% of population)`, # change colimn name
+         deaths = starts_with("Death")) %>% # change column name
+  mutate(country = str_replace_all(country," ", "_"),# replace spaces with "_"
+         NoAccess = 100-access) %>% # calculate no access %
+  slice_max(deaths, n = 10) # chose top 10 countries with most deathes
+
+df <- tibble(death) %>% # create dataframe
+  mutate(country = as.factor(country)) # turn into a factor
+
+dissim <- daisy(df) # create dissimilarity dataframe
+
+distmat = as.dist(dissim) # create distance matrix
+
+pcoa = data.frame(cmdscale(distmat,k=2)) # create multidimension matrix with 2 dimensions
+names(pcoa) = c('PCoA1', 'PCoA2') # name dimensions
+  
+```
+
+## Analyze Data
+
+```{r}
+
+ggplot(pcoa, aes(x=PCoA1, # map x
+                 y=PCoA2, # map y
+                 color = fct_reorder(df$country, df$deaths, .desc = TRUE), # reorder 
+                 size = death$deaths))+ # set size relative to death percent
+  geom_point()+
+  labs(color = "Country", # labels
+       title = "Countries with most Air Pollution Deaths in 2016",
+       subtitle = "and the dissimilarity related to percent with No-Access to Clean Fuels")+
+  guides(size = FALSE) # remove extra guide
+```
+

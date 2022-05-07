@@ -1,0 +1,24 @@
+---
+title: "Digital publications"
+author: "Jessica Hunter"
+date: "4/25/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+news_orgs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-04-05/news_orgs.csv')
+
+head(news_orgs)
+```
+
+
+```{r}
+library(tidyverse)
+```
+

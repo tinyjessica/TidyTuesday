@@ -1,0 +1,60 @@
+---
+title: "tidytuesday3"
+author: "Jessica Hunter"
+date: "4/24/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Intro
+
+## libraries
+
+```{r}
+library(tidyverse)
+library(wordcloud)
+library(reshape2)
+
+```
+
+
+## read in data
+```{r}
+babynames <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-22/babynames.csv')
+
+```
+
+
+
+```{r, warning=FALSE, error=FALSE}
+twok_names<- babynames %>% 
+  mutate(sex= ifelse(sex=="F", "female","male")) %>% 
+  filter(year>1999, year<2018) %>% 
+  group_by(year) %>% 
+  slice_max(n, n=200) %>% 
+  group_by(name, sex) %>% 
+  slice_max(n, n = 100) %>% 
+  select(!prop)
+  
+
+#str_replace_all(twok_names$sex,c("F"="female", "M"="male"))
+  
+  widenames<- pivot_wider(twok_names, names_from = name, values_from = n) %>% 
+    summarise_if(is.numeric, sum, na.rm = TRUE) %>% 
+    select(!year) %>% 
+    pivot_longer(cols= !sex, names_to = "name") %>% 
+    filter(value!=0) %>% 
+    group_by(sex) %>% 
+    slice_max(value, n=100) 
+    
+  
+  widenames %>% 
+    acast(name~sex,value.var = "value", fill = 0) %>% 
+    comparison.cloud(colors = c("purple", "blue"),
+                   max.words = 100, random.order = FALSE)
+    
+```
+

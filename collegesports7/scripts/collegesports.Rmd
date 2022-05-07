@@ -1,0 +1,48 @@
+---
+title: "collegesports"
+author: "Jessica Hunter"
+date: "5/5/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FALSE)
+```
+
+# Intro 
+
+
+## Libraries
+```{r}
+library(tidyverse)
+```
+
+## Read in Data
+```{r, results='hide'}
+sports <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-29/sports.csv')
+
+```
+
+## Clean data
+
+```{r}
+glimpse(sports)
+fems<- sports %>% 
+  select(femsum = sum_partic_women,
+         sports, state_cd, institution_name,
+         femtotal = ef_female_count) %>% 
+  group_by(institution_name) %>% 
+  mutate(sumfem = sum(femsum, na.rm = TRUE))
+
+fems<- sports %>% 
+  select(femsum = sum_partic_women,
+         sports, state_cd, institution_name,
+         femtotal = ef_female_count)
+  
+  
+
+cumsum(percent
+```
+
+
+

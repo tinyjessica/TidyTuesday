@@ -1,0 +1,70 @@
+---
+title: 'TidyTuesday2  #2'
+author: "Jessica Hunter"
+date: "4/24/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+
+## Intro
+
+This script takes the data from the Times and Big Dave crossword puzzles and makes a commonality wordcloud.
+
+## Libraries
+These are the libraries needed for the code to run.
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(wordcloud)
+library(reshape2)
+```
+
+## Load Data
+
+```{r}
+big_dave <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-04-19/big_dave.csv')
+
+times <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-04-19/times.csv')
+
+```
+
+
+
+## Analysis
+
+This is where I clean and select the data I want to use.
+```{r}
+timescluewords3<- times %>%
+  drop_na(answer) %>% # remove empty rows
+  unnest_tokens(word, clue, drop = FALSE) %>% #turns the category into single words 
+  filter(str_detect(word,"[:alpha:]")) %>% # removes everything but the letters
+  anti_join(stop_words)%>% # removes stop words
+  count(word, sort = TRUE) %>% 
+  slice_head(n=100) %>% # takes the top 100 words with the highest counts
+  select(timeword=n, word) # selects the column I will use
+
+davecluewords3 <-big_dave %>% 
+  drop_na(answer) %>% # remove empty rows
+  unnest_tokens(word, clue, drop = FALSE) %>% #turns the category into single words 
+  filter(str_detect(word,"[:alpha:]")) %>%  # removes everything but the letters
+  anti_join(stop_words) %>% # removes stop words
+  count(word, sort = TRUE) %>% # tallys each word
+  slice_head(n=100) %>% # takes the top 100 words with the highest counts
+  select(daveword=n, word) # selects the column I will us
+
+
+wordjoin<- full_join(davecluewords3,timescluewords3) # merges both dataframes
+
+wordlong<- pivot_longer(wordjoin, cols = c("daveword", "timeword"), names_to = "values") # turns wide data into long data
+
+wordlong %>% # data
+  acast(word ~ values, value.var = "value", fill = 0) %>% # turns it into a matrix
+commonality.cloud(colors = c("aquamarine3", "blueviolet"),random.order=FALSE) # creates commonality plot
+```
+
+#F8766D
