@@ -1,5 +1,5 @@
 ---
-title: "collegesports"
+title: "College Sports"
 author: "Jessica Hunter"
 date: "5/5/2022"
 output: html_document
@@ -11,10 +11,13 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FAL
 
 # Intro 
 
-
+This script takes the sports data and plots the schools that have women who participate in rowing and plots them by percentage
 ## Libraries
 ```{r}
 library(tidyverse)
+library(maps)
+library(mapdata)
+library(ggmap)
 ```
 
 ## Read in Data
@@ -23,26 +26,52 @@ sports <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tid
 
 ```
 
-## Clean data
+## Clean the data
 
 ```{r}
-glimpse(sports)
+
 fems<- sports %>% 
-  select(femsum = sum_partic_women,
-         sports, state_cd, institution_name,
+  filter(year == 2019, # filters the year
+         sum_partic_women != 0, # removes the rows with no participation
+         sports == "Rowing") %>% # filters out rowing sport
+  select(femsum = sum_partic_women, # select and edit the colum names
+         sports, state_cd, institution_name, zip_text,
          femtotal = ef_female_count) %>% 
-  group_by(institution_name) %>% 
-  mutate(sumfem = sum(femsum, na.rm = TRUE))
+  mutate(percentparti = femsum/femtotal, # creates new columns of percent
+         zip_text = str_sub(zip_text, 1,5), # shortens string to only 5 digits
+         region = if_else(state_cd == "DC", "District of Columbia",
+                          state.name[match(state_cd, state.abb)])) %>% # fixes the DC name and changes the other names from 2 letter to full names
+  mutate(latlon = geocode(zip_text)) # finds the latitudes and longitudes using zip
 
-fems<- sports %>% 
-  select(femsum = sum_partic_women,
-         sports, state_cd, institution_name,
-         femtotal = ef_female_count)
-  
-  
 
-cumsum(percent
+states <- map_data("state") # gets USE states map data for drawing
+        
+
+
+
 ```
 
+## Analyze the data
+
+```{r}
+ggplot()+
+  geom_polygon(data = states, 
+               aes(x = long, # maps x and y
+                   y = lat, 
+                   group = group, #  important for map not look weird
+                   fill = region), # colors states
+               alpha = 0.5)+ # transparency
+  geom_point(data = fems, aes(x = latlon$lon, # maps lat and long points
+                              y = latlon$lat, 
+                              size = percentparti, # maps participation
+                              color =  percentparti))+
+  coord_map()+ 
+  theme_void()+ # removes the grid background
+  guides(fill = "none", # removes some legends
+         color = "none",
+         size = guide_legend("Percent Participation"))+ # labels legend
+  labs(title = "Rowing participation for Women in Higher Education Institutions in 2019") # adds title
+
+```
 
 
